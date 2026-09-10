@@ -60,7 +60,7 @@ describe('KAZI-845 exportCvDocumentDocx', () => {
     const res = await exportCvDocumentDocx(42, 'en');
 
     expect(res.success).toBe(true);
-    expect(res.success && res.data.filename).toBe('cv-42.docx');
+    expect(res.data?.filename).toBe('cv-42.docx');
   });
 
   it('surfaces backend error_code/detail on a non-OK response', async () => {
