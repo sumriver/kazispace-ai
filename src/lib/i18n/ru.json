@@ -564,6 +564,11 @@
 		"exportErrorNotFound": "Документ резюме не найден. Сначала сгенерируйте резюме.",
 		"exportErrorUnavailable": "Экспорт PDF на сервере пока недоступен.",
 		"exportErrorTimeout": "Превышено время ожидания экспорта PDF — повторите попытку.",
+		"downloadDocx": "Скачать DOCX",
+		"exportingDocx": "Подготовка DOCX…",
+		"exportErrorGenericDocx": "Не удалось скачать DOCX.",
+		"exportErrorUnavailableDocx": "Экспорт DOCX на сервере пока недоступен.",
+		"exportErrorTimeoutDocx": "Превышено время ожидания экспорта DOCX — повторите попытку.",
 		"parsedSectionKeys": {
 			"target_role": "Целевая роль",
 			"skills": "Навыки",
