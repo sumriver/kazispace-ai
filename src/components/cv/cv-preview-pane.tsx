@@ -42,6 +42,10 @@ export function CvPreviewPane({
   const t = useTranslations('cv');
   const showPdfButton = canDownload && onDownload;
   const showDocxButton = canDownloadDocx && onDownloadDocx;
+  // KAZI-845 review: the hook already blocks a concurrent PDF+DOCX export
+  // (silent no-op, no toast) -- mirror that in the UI so neither button
+  // stays clickable while the *other* format is in flight.
+  const isExportingAny = Boolean(isExporting) || Boolean(isExportingDocx);
 
   return (
     <aside
@@ -69,6 +73,7 @@ export function CvPreviewPane({
             {showPdfButton ? (
               <ExportButton
                 isExporting={isExporting}
+                disabled={isExportingAny}
                 loadingLabel={t('exportingPdf')}
                 onDownload={onDownload!}
                 className="h-8 gap-1.5 text-xs"
@@ -79,6 +84,7 @@ export function CvPreviewPane({
             {showDocxButton ? (
               <ExportButton
                 isExporting={isExportingDocx}
+                disabled={isExportingAny}
                 loadingLabel={t('exportingDocx')}
                 onDownload={onDownloadDocx!}
                 className="h-8 gap-1.5 text-xs"
@@ -120,6 +126,7 @@ export function CvPreviewPane({
                 {showPdfButton ? (
                   <ExportButton
                     isExporting={isExporting}
+                    disabled={isExportingAny}
                     loadingLabel={t('exportingPdf')}
                     onDownload={onDownload!}
                     className="gap-2"
@@ -129,6 +136,7 @@ export function CvPreviewPane({
                 {showDocxButton ? (
                   <ExportButton
                     isExporting={isExportingDocx}
+                    disabled={isExportingAny}
                     loadingLabel={t('exportingDocx')}
                     onDownload={onDownloadDocx!}
                     className="gap-2"
@@ -151,6 +159,7 @@ export function CvPreviewPane({
           {showPdfButton ? (
             <ExportButton
               isExporting={isExporting}
+              disabled={isExportingAny}
               loadingLabel={t('exportingPdf')}
               onDownload={onDownload!}
               className="flex-1 h-11 gap-2"
@@ -160,6 +169,7 @@ export function CvPreviewPane({
           {showDocxButton ? (
             <ExportButton
               isExporting={isExportingDocx}
+              disabled={isExportingAny}
               loadingLabel={t('exportingDocx')}
               onDownload={onDownloadDocx!}
               className="flex-1 h-11 gap-2"
@@ -175,6 +185,7 @@ export function CvPreviewPane({
 
 function ExportButton({
   isExporting,
+  disabled,
   loadingLabel,
   onDownload,
   label,
@@ -182,6 +193,8 @@ function ExportButton({
   variant = 'default',
 }: {
   isExporting?: boolean;
+  /** Whether the button is clickable — defaults to `isExporting` alone, but the caller may pass a wider guard (e.g. any sibling export in flight). */
+  disabled?: boolean;
   loadingLabel: string;
   onDownload: () => void;
   label: string;
@@ -191,7 +204,7 @@ function ExportButton({
   return (
     <Button
       variant={variant}
-      disabled={isExporting}
+      disabled={disabled ?? isExporting}
       onClick={onDownload}
       className={className}
     >
