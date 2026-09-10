@@ -77,21 +77,22 @@ function parseExportError(
 export function resolveCvExportErrorMessage(
   error: string | undefined,
   errorCode: string | undefined,
-  t: (key: string) => string
+  t: (key: string) => string,
+  format: 'pdf' | 'docx' = 'pdf'
 ): string {
   if (errorCode === 'NOT_FOUND') return t('exportErrorNotFound');
   if (errorCode === 'INTERNAL_SERVER_ERROR' || error?.includes('WeasyPrint')) {
-    return t('exportErrorUnavailable');
+    return t(format === 'docx' ? 'exportErrorUnavailableDocx' : 'exportErrorUnavailable');
   }
   if (errorCode === 'TIMEOUT' || errorCode === 'NETWORK_ERROR') {
-    return t('exportErrorTimeout');
+    return t(format === 'docx' ? 'exportErrorTimeoutDocx' : 'exportErrorTimeout');
   }
-  return error ?? t('exportErrorGeneric');
+  return error ?? t(format === 'docx' ? 'exportErrorGenericDocx' : 'exportErrorGeneric');
 }
 
-/** POST /api/v1/cv/documents/{doc_id}/export → PDF download (KAZI-101). */
-export async function exportCvDocumentPdf(
+async function exportCvDocument(
   docId: number,
+  format: 'pdf' | 'docx',
   locale?: string
 ): Promise<ApiResponse<{ filename: string }>> {
   const controller = new AbortController();
@@ -99,7 +100,7 @@ export async function exportCvDocumentPdf(
 
   try {
     const response = await regionAwareApiClient.fetch(
-      `/api/v1/cv/documents/${docId}/export`,
+      `/api/v1/cv/documents/${docId}/${format === 'docx' ? 'export_docx' : 'export'}`,
       {
         method: 'POST',
         headers: buildExportHeaders(locale),
@@ -117,7 +118,7 @@ export async function exportCvDocumentPdf(
     const blob = await response.blob();
     const filename =
       parseContentDispositionFilename(response.headers.get('Content-Disposition')) ??
-      `cv-${docId}.pdf`;
+      `cv-${docId}.${format}`;
     triggerBlobDownload(blob, filename);
     return { success: true, data: { filename } };
   } catch (err) {
@@ -125,7 +126,7 @@ export async function exportCvDocumentPdf(
     return {
       success: false,
       error: aborted
-        ? 'PDF export timed out'
+        ? `${format.toUpperCase()} export timed out`
         : err instanceof Error
           ? err.message
           : 'Network error',
@@ -134,4 +135,20 @@ export async function exportCvDocumentPdf(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** POST /api/v1/cv/documents/{doc_id}/export → PDF download (KAZI-101). */
+export function exportCvDocumentPdf(
+  docId: number,
+  locale?: string
+): Promise<ApiResponse<{ filename: string }>> {
+  return exportCvDocument(docId, 'pdf', locale);
+}
+
+/** POST /api/v1/cv/documents/{doc_id}/export_docx → DOCX download (KAZI-818 AC②, KAZI-845). */
+export function exportCvDocumentDocx(
+  docId: number,
+  locale?: string
+): Promise<ApiResponse<{ filename: string }>> {
+  return exportCvDocument(docId, 'docx', locale);
 }

@@ -850,6 +850,11 @@
 		"exportErrorNotFound": "CV document not found. Generate your CV first.",
 		"exportErrorUnavailable": "PDF export is not available on the server yet.",
 		"exportErrorTimeout": "PDF export timed out — please try again.",
+		"downloadDocx": "Download DOCX",
+		"exportingDocx": "Preparing DOCX…",
+		"exportErrorGenericDocx": "Failed to download DOCX.",
+		"exportErrorUnavailableDocx": "DOCX export is not available on the server yet.",
+		"exportErrorTimeoutDocx": "DOCX export timed out — please try again.",
 		"parsedSectionKeys": {
 			"target_role": "Target role",
 			"skills": "Skills",

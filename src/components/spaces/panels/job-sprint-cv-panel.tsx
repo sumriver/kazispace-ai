@@ -34,6 +34,9 @@ export function JobSprintCvPanel({ locale, jobId, className }: JobSprintCvPanelP
     documentId,
     isExporting,
     exportCvPdf,
+    isExportingDocx,
+    canExportDocx,
+    exportCvDocx,
     confirmCv,
     regenerateCv,
     parsedSections,
@@ -94,6 +97,9 @@ export function JobSprintCvPanel({ locale, jobId, className }: JobSprintCvPanelP
       canDownload={canDownload}
       isExporting={isExporting}
       onDownload={() => void exportCvPdf()}
+      canDownloadDocx={canDownload && canExportDocx}
+      isExportingDocx={isExportingDocx}
+      onDownloadDocx={() => void exportCvDocx()}
       footer={previewFooter}
       className={cn('h-full w-full lg:w-full lg:max-w-none', className)}
     />

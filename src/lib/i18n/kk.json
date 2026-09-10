@@ -546,6 +546,11 @@
 		"exportErrorNotFound": "Түйіндеме табылмады. Алдымен түйіндеме жасаңыз.",
 		"exportErrorUnavailable": "Серверде PDF экспорты әлі қолжетімсіз.",
 		"exportErrorTimeout": "PDF экспорты уақыты асып кетті — қайталаңыз.",
+		"downloadDocx": "DOCX жүктеу",
+		"exportingDocx": "DOCX дайындалуда…",
+		"exportErrorGenericDocx": "DOCX жүктеу сәтсіз аяқталды.",
+		"exportErrorUnavailableDocx": "Серверде DOCX экспорты әлі қолжетімсіз.",
+		"exportErrorTimeoutDocx": "DOCX экспорты уақыты асып кетті — қайталаңыз.",
 		"parsedSectionKeys": {
 			"target_role": "Мақсатты лауазым",
 			"skills": "Дағдылар",

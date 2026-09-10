@@ -46,7 +46,11 @@ import {
   type CvPreviewContent,
 } from '@/lib/cv-api';
 import { uploadCvResumeFile, resolveCvUploadErrorMessage } from '@/lib/cv-input-api';
-import { exportCvDocumentPdf, resolveCvExportErrorMessage } from '@/lib/cv-export-api';
+import {
+  exportCvDocumentPdf,
+  exportCvDocumentDocx,
+  resolveCvExportErrorMessage,
+} from '@/lib/cv-export-api';
 import { publishWorkspaceAssetsInvalidate } from '@/lib/workspace-assets-invalidate';
 import { useAuthStore, useAgentStore, useUIStore } from '@/lib/store';
 import { normalizeAgentSessions, isAgentSessionReadOnly } from '@/lib/agent-sessions';
@@ -143,6 +147,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [parsedSections, setParsedSections] = useState<Record<string, string> | null>(null);
   const [documentId, setDocumentId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -785,7 +790,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
   );
 
   const exportCvPdf = useCallback(async () => {
-    if (!enabled || !isLoggedIn || isSending || isExporting) {
+    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx) {
       return { ok: false as const };
     }
 
@@ -809,6 +814,47 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     documentId,
     enabled,
     isExporting,
+    isExportingDocx,
+    isLoggedIn,
+    isSending,
+    locale,
+    sendAgentMessage,
+    showToast,
+    t,
+  ]);
+
+  /** KAZI-845: parallels exportCvPdf — backend only surfaces this CTA (`resume` non-empty). */
+  const canExportDocx = useMemo(
+    () => nextActions.some((action) => action.type === 'export_docx'),
+    [nextActions]
+  );
+
+  const exportCvDocx = useCallback(async () => {
+    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx) {
+      return { ok: false as const };
+    }
+
+    if (!documentId) {
+      return sendAgentMessage('__action:export_docx', { showUserBubble: false });
+    }
+
+    setIsExportingDocx(true);
+    try {
+      const res = await exportCvDocumentDocx(documentId, locale);
+      if (!res.success) {
+        showToast(resolveCvExportErrorMessage(res.error, res.errorCode, t, 'docx'), 'error');
+        return { ok: false as const, error: res.error };
+      }
+      publishWorkspaceAssetsInvalidate();
+      return { ok: true as const };
+    } finally {
+      setIsExportingDocx(false);
+    }
+  }, [
+    documentId,
+    enabled,
+    isExporting,
+    isExportingDocx,
     isLoggedIn,
     isSending,
     locale,
@@ -953,7 +999,8 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     !error &&
     !isReadOnly &&
     !isUploading &&
-    !isExporting;
+    !isExporting &&
+    !isExportingDocx;
 
   const activeWorkflow = useMemo(
     () =>
@@ -981,6 +1028,8 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     isSending,
     isUploading,
     isExporting,
+    isExportingDocx,
+    canExportDocx,
     error,
     needsLogin: !isLoggedIn,
     needsOnboarding,
@@ -997,6 +1046,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     confirmCv,
     regenerateCv,
     exportCvPdf,
+    exportCvDocx,
     uploadResume,
     selectSession,
     refreshSessions,

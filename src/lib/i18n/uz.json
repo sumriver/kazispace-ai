@@ -515,6 +515,11 @@
 		"exportErrorNotFound": "Rezyume topilmadi. Avval rezyume yarating.",
 		"exportErrorUnavailable": "Serverda PDF eksporti hali mavjud emas.",
 		"exportErrorTimeout": "PDF eksport vaqti tugadi — qayta urinib ko'ring.",
+		"downloadDocx": "DOCX yuklab olish",
+		"exportingDocx": "DOCX tayyorlanmoqda…",
+		"exportErrorGenericDocx": "DOCX yuklab olinmadi.",
+		"exportErrorUnavailableDocx": "Serverda DOCX eksporti hali mavjud emas.",
+		"exportErrorTimeoutDocx": "DOCX eksport vaqti tugadi — qayta urinib ko'ring.",
 		"parsedSectionKeys": {
 			"target_role": "Maqsadli lavozim",
 			"skills": "Ko'nikmalar",

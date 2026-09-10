@@ -16,6 +16,10 @@ interface CvPreviewPaneProps {
   canDownload?: boolean;
   isExporting?: boolean;
   onDownload?: () => void;
+  /** KAZI-845: DOCX sibling of the PDF download — backend only surfaces it once `resume` is populated. */
+  canDownloadDocx?: boolean;
+  isExportingDocx?: boolean;
+  onDownloadDocx?: () => void;
   jobSubtitle?: string;
   panelId?: string;
   className?: string;
@@ -28,11 +32,16 @@ export function CvPreviewPane({
   canDownload,
   isExporting,
   onDownload,
+  canDownloadDocx,
+  isExportingDocx,
+  onDownloadDocx,
   jobSubtitle,
   panelId,
   className,
 }: CvPreviewPaneProps) {
   const t = useTranslations('cv');
+  const showPdfButton = canDownload && onDownload;
+  const showDocxButton = canDownloadDocx && onDownloadDocx;
 
   return (
     <aside
@@ -55,14 +64,29 @@ export function CvPreviewPane({
             <p className="text-[11px] text-gray-500 truncate">{jobSubtitle}</p>
           ) : null}
         </div>
-        {canDownload && onDownload ? (
-          <DownloadPdfButton
-            isExporting={isExporting}
-            onDownload={onDownload}
-            className="hidden lg:inline-flex h-8 gap-1.5 text-xs"
-            variant="outline"
-            label="PDF"
-          />
+        {showPdfButton || showDocxButton ? (
+          <div className="hidden lg:flex items-center gap-1.5">
+            {showPdfButton ? (
+              <ExportButton
+                isExporting={isExporting}
+                loadingLabel={t('exportingPdf')}
+                onDownload={onDownload!}
+                className="h-8 gap-1.5 text-xs"
+                variant="outline"
+                label="PDF"
+              />
+            ) : null}
+            {showDocxButton ? (
+              <ExportButton
+                isExporting={isExportingDocx}
+                loadingLabel={t('exportingDocx')}
+                onDownload={onDownloadDocx!}
+                className="h-8 gap-1.5 text-xs"
+                variant="outline"
+                label="DOCX"
+              />
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -92,14 +116,27 @@ export function CvPreviewPane({
           <EmptyState
             message={t('previewPendingDownload')}
             action={
-              onDownload ? (
-                <DownloadPdfButton
-                  isExporting={isExporting}
-                  onDownload={onDownload}
-                  className="mt-5 gap-2"
-                  label={t('downloadPdf')}
-                />
-              ) : null
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {showPdfButton ? (
+                  <ExportButton
+                    isExporting={isExporting}
+                    loadingLabel={t('exportingPdf')}
+                    onDownload={onDownload!}
+                    className="gap-2"
+                    label={t('downloadPdf')}
+                  />
+                ) : null}
+                {showDocxButton ? (
+                  <ExportButton
+                    isExporting={isExportingDocx}
+                    loadingLabel={t('exportingDocx')}
+                    onDownload={onDownloadDocx!}
+                    className="gap-2"
+                    variant="outline"
+                    label={t('downloadDocx')}
+                  />
+                ) : null}
+              </div>
             }
           />
         ) : (
@@ -109,35 +146,48 @@ export function CvPreviewPane({
 
       {footer}
 
-      {canDownload && onDownload ? (
-        <div className="lg:hidden shrink-0 p-4 bg-white border-t border-gray-200/80 safe-area-pb">
-          <DownloadPdfButton
-            isExporting={isExporting}
-            onDownload={onDownload}
-            className="w-full h-11 gap-2"
-            label={t('downloadPdf')}
-          />
+      {showPdfButton || showDocxButton ? (
+        <div className="lg:hidden shrink-0 flex gap-2 p-4 bg-white border-t border-gray-200/80 safe-area-pb">
+          {showPdfButton ? (
+            <ExportButton
+              isExporting={isExporting}
+              loadingLabel={t('exportingPdf')}
+              onDownload={onDownload!}
+              className="flex-1 h-11 gap-2"
+              label={t('downloadPdf')}
+            />
+          ) : null}
+          {showDocxButton ? (
+            <ExportButton
+              isExporting={isExportingDocx}
+              loadingLabel={t('exportingDocx')}
+              onDownload={onDownloadDocx!}
+              className="flex-1 h-11 gap-2"
+              variant={showPdfButton ? 'outline' : 'default'}
+              label={t('downloadDocx')}
+            />
+          ) : null}
         </div>
       ) : null}
     </aside>
   );
 }
 
-function DownloadPdfButton({
+function ExportButton({
   isExporting,
+  loadingLabel,
   onDownload,
   label,
   className,
   variant = 'default',
 }: {
   isExporting?: boolean;
+  loadingLabel: string;
   onDownload: () => void;
   label: string;
   className?: string;
   variant?: 'default' | 'outline';
 }) {
-  const t = useTranslations('cv');
-
   return (
     <Button
       variant={variant}
@@ -150,7 +200,7 @@ function DownloadPdfButton({
       ) : (
         <Download className="h-4 w-4" />
       )}
-      {isExporting ? t('exportingPdf') : label}
+      {isExporting ? loadingLabel : label}
     </Button>
   );
 }
