@@ -40,7 +40,9 @@ describe('KAZI-848 CvPreviewPane switch-template button', () => {
   });
 
   function switchButtons() {
-    return Array.from(host.querySelectorAll('button[aria-label="switchTemplate"]'));
+    return Array.from(
+      host.querySelectorAll<HTMLButtonElement>('button[aria-label="switchTemplate"]')
+    );
   }
 
   it('does not render when onSwitchTemplate is not provided', async () => {
