@@ -551,6 +551,9 @@
 		"exportErrorGenericDocx": "DOCX жүктеу сәтсіз аяқталды.",
 		"exportErrorUnavailableDocx": "Серверде DOCX экспорты әлі қолжетімсіз.",
 		"exportErrorTimeoutDocx": "DOCX экспорты уақыты асып кетті — қайталаңыз.",
+		"switchTemplate": "Басқа үлгі қолдану",
+		"switchingTemplate": "Үлгі ауыстырылуда…",
+		"switchTemplateError": "Үлгіні ауыстыру мүмкін болмады. Қайтадан қайта көріңіз.",
 		"parsedSectionKeys": {
 			"target_role": "Мақсатты лауазым",
 			"skills": "Дағдылар",

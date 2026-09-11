@@ -37,6 +37,8 @@ export function JobSprintCvPanel({ locale, jobId, className }: JobSprintCvPanelP
     isExportingDocx,
     canExportDocx,
     exportCvDocx,
+    isSwitchingTemplate,
+    switchTemplate,
     confirmCv,
     regenerateCv,
     parsedSections,
@@ -100,6 +102,8 @@ export function JobSprintCvPanel({ locale, jobId, className }: JobSprintCvPanelP
       canDownloadDocx={canDownload && canExportDocx}
       isExportingDocx={isExportingDocx}
       onDownloadDocx={() => void exportCvDocx()}
+      isSwitchingTemplate={isSwitchingTemplate}
+      onSwitchTemplate={() => void switchTemplate()}
       footer={previewFooter}
       className={cn('h-full w-full lg:w-full lg:max-w-none', className)}
     />

@@ -49,6 +49,7 @@ import { uploadCvResumeFile, resolveCvUploadErrorMessage } from '@/lib/cv-input-
 import {
   exportCvDocumentPdf,
   exportCvDocumentDocx,
+  switchCvDocumentTemplate,
   resolveCvExportErrorMessage,
 } from '@/lib/cv-export-api';
 import { publishWorkspaceAssetsInvalidate } from '@/lib/workspace-assets-invalidate';
@@ -148,6 +149,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
   const [isUploading, setIsUploading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
+  const [isSwitchingTemplate, setIsSwitchingTemplate] = useState(false);
   const [parsedSections, setParsedSections] = useState<Record<string, string> | null>(null);
   const [documentId, setDocumentId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -863,6 +865,45 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     t,
   ]);
 
+  /**
+   * KAZI-848 "换一个" — the CV template is auto-selected server-side from
+   * target_role at generation time; this is the user's lightweight local
+   * override (cycles to the next template in the same style bucket, zero
+   * additional LLM calls). Not a template browser — that direction was
+   * explicitly rejected in favor of auto-select + this one override.
+   */
+  const switchTemplate = useCallback(async () => {
+    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx || isSwitchingTemplate) {
+      return { ok: false as const };
+    }
+    if (!documentId) {
+      return { ok: false as const };
+    }
+
+    setIsSwitchingTemplate(true);
+    try {
+      const res = await switchCvDocumentTemplate(documentId, locale);
+      if (!res.success) {
+        showToast(t('switchTemplateError'), 'error');
+        return { ok: false as const, error: res.error };
+      }
+      return { ok: true as const };
+    } finally {
+      setIsSwitchingTemplate(false);
+    }
+  }, [
+    documentId,
+    enabled,
+    isExporting,
+    isExportingDocx,
+    isLoggedIn,
+    isSending,
+    isSwitchingTemplate,
+    locale,
+    showToast,
+    t,
+  ]);
+
   const uploadResume = useCallback(
     async (file: File) => {
       if (!enabled || !isLoggedIn || !sessionId || isReadOnly || isSending || isUploading) {
@@ -1000,7 +1041,8 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     !isReadOnly &&
     !isUploading &&
     !isExporting &&
-    !isExportingDocx;
+    !isExportingDocx &&
+    !isSwitchingTemplate;
 
   const activeWorkflow = useMemo(
     () =>
@@ -1029,6 +1071,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     isUploading,
     isExporting,
     isExportingDocx,
+    isSwitchingTemplate,
     canExportDocx,
     error,
     needsLogin: !isLoggedIn,
@@ -1047,6 +1090,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     regenerateCv,
     exportCvPdf,
     exportCvDocx,
+    switchTemplate,
     uploadResume,
     selectSession,
     refreshSessions,

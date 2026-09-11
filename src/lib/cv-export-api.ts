@@ -152,3 +152,47 @@ export function exportCvDocumentDocx(
 ): Promise<ApiResponse<{ filename: string }>> {
   return exportCvDocument(docId, 'docx', locale);
 }
+
+/**
+ * POST /api/v1/cv/documents/{doc_id}/template/next → "换一个" (KAZI-848).
+ *
+ * Zero-LLM, purely local template cycling within the already-classified
+ * bucket — the backend auto-picks a template from `target_role` at
+ * generation time (KAZI-848), and this is the user's lightweight override,
+ * not a template browser/picker (that direction was explicitly rejected).
+ * The backend also invalidates any cached PDF for this doc, so the next
+ * export re-renders with the new template.
+ */
+export async function switchCvDocumentTemplate(
+  docId: number,
+  locale?: string
+): Promise<ApiResponse<{ templateBucket: string; templateId: string }>> {
+  try {
+    const response = await regionAwareApiClient.fetch(
+      `/api/v1/cv/documents/${docId}/template/next`,
+      {
+        method: 'POST',
+        headers: buildExportHeaders(locale),
+        requireSession: Boolean(getAuthToken()),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const { error, errorCode } = parseExportError(errorData, response.status);
+      return { success: false, error, errorCode };
+    }
+
+    const data = (await response.json()) as { template_bucket: string; template_id: string };
+    return {
+      success: true,
+      data: { templateBucket: data.template_bucket, templateId: data.template_id },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Network error',
+      errorCode: 'NETWORK_ERROR',
+    };
+  }
+}

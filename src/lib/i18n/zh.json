@@ -841,6 +841,9 @@
 		"exportErrorGenericDocx": "DOCX 下载失败。",
 		"exportErrorUnavailableDocx": "服务器暂不支持 DOCX 导出。",
 		"exportErrorTimeoutDocx": "DOCX 导出超时，请重试。",
+		"switchTemplate": "换一个",
+		"switchingTemplate": "正在切换…",
+		"switchTemplateError": "切换模板失败，请重试。",
 		"parsedSectionKeys": {
 			"target_role": "目标岗位",
 			"skills": "技能",
