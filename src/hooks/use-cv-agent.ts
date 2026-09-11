@@ -792,7 +792,12 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
   );
 
   const exportCvPdf = useCallback(async () => {
-    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx) {
+    // isSwitchingTemplate: review on kazispace-ai#222 — a template switch in
+    // flight invalidates the doc's cached PDF server-side, so starting an
+    // export at the same time would race that invalidation. Unreachable via
+    // the UI (CvPreviewPane's isExportingAny already disables this button
+    // while switching) but the hook-level guard should hold on its own too.
+    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx || isSwitchingTemplate) {
       return { ok: false as const };
     }
 
@@ -819,6 +824,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     isExportingDocx,
     isLoggedIn,
     isSending,
+    isSwitchingTemplate,
     locale,
     sendAgentMessage,
     showToast,
@@ -832,7 +838,8 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
   );
 
   const exportCvDocx = useCallback(async () => {
-    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx) {
+    // isSwitchingTemplate: same reasoning as exportCvPdf above.
+    if (!enabled || !isLoggedIn || isSending || isExporting || isExportingDocx || isSwitchingTemplate) {
       return { ok: false as const };
     }
 
@@ -859,6 +866,7 @@ export function useCvAgent(jobId?: string | null, options?: { enabled?: boolean 
     isExportingDocx,
     isLoggedIn,
     isSending,
+    isSwitchingTemplate,
     locale,
     sendAgentMessage,
     showToast,

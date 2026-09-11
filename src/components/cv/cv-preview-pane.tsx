@@ -48,6 +48,7 @@ export function CvPreviewPane({
   const showPdfButton = canDownload && onDownload;
   const showDocxButton = canDownloadDocx && onDownloadDocx;
   const showSwitchTemplate = canDownload && onSwitchTemplate;
+  const switchTemplateLabel = isSwitchingTemplate ? t('switchingTemplate') : t('switchTemplate');
   // KAZI-845 review: the hook already blocks a concurrent PDF+DOCX export
   // (silent no-op, no toast) -- mirror that in the UI so neither button
   // stays clickable while the *other* format is in flight.
@@ -83,8 +84,9 @@ export function CvPreviewPane({
                 size="icon"
                 disabled={isExportingAny}
                 onClick={onSwitchTemplate}
-                title={t('switchTemplate')}
-                aria-label={t('switchTemplate')}
+                title={switchTemplateLabel}
+                aria-label={switchTemplateLabel}
+                data-testid="cv-switch-template-button"
                 className="h-8 w-8 text-gray-500 hover:text-kazi-navy"
               >
                 <RefreshCw className={cn('h-3.5 w-3.5', isSwitchingTemplate && 'animate-spin')} />
@@ -182,8 +184,9 @@ export function CvPreviewPane({
               size="icon"
               disabled={isExportingAny}
               onClick={onSwitchTemplate}
-              title={t('switchTemplate')}
-              aria-label={t('switchTemplate')}
+              title={switchTemplateLabel}
+              aria-label={switchTemplateLabel}
+              data-testid="cv-switch-template-button"
               className="h-11 w-11 shrink-0"
             >
               <RefreshCw className={cn('h-4 w-4', isSwitchingTemplate && 'animate-spin')} />

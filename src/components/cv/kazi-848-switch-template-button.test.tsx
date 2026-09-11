@@ -40,8 +40,11 @@ describe('KAZI-848 CvPreviewPane switch-template button', () => {
   });
 
   function switchButtons() {
+    // Stable data-testid, not aria-label -- the label itself swaps between
+    // 'switchTemplate'/'switchingTemplate' depending on isSwitchingTemplate
+    // (review on #222), so it can't double as the query selector.
     return Array.from(
-      host.querySelectorAll<HTMLButtonElement>('button[aria-label="switchTemplate"]')
+      host.querySelectorAll<HTMLButtonElement>('[data-testid="cv-switch-template-button"]')
     );
   }
 
@@ -117,6 +120,39 @@ describe('KAZI-848 CvPreviewPane switch-template button', () => {
     });
     for (const button of switchButtons()) {
       expect(button.disabled).toBe(true);
+    }
+  });
+
+  it('swaps the title/aria-label to the in-flight copy while switching (review #222)', async () => {
+    await act(async () => {
+      root.render(
+        <CvPreviewPane
+          preview={{ format: 'markdown', content: '# CV' }}
+          canDownload
+          onDownload={vi.fn()}
+          onSwitchTemplate={vi.fn()}
+        />
+      );
+    });
+    for (const button of switchButtons()) {
+      expect(button.getAttribute('aria-label')).toBe('switchTemplate');
+      expect(button.getAttribute('title')).toBe('switchTemplate');
+    }
+
+    await act(async () => {
+      root.render(
+        <CvPreviewPane
+          preview={{ format: 'markdown', content: '# CV' }}
+          canDownload
+          onDownload={vi.fn()}
+          onSwitchTemplate={vi.fn()}
+          isSwitchingTemplate
+        />
+      );
+    });
+    for (const button of switchButtons()) {
+      expect(button.getAttribute('aria-label')).toBe('switchingTemplate');
+      expect(button.getAttribute('title')).toBe('switchingTemplate');
     }
   });
 
