@@ -10,10 +10,18 @@ import {
   reindexWorkspaceAsset,
 } from '@/lib/workspace-assets-api';
 import { AUTH_SESSION_CLEARED_EVENT } from '@/lib/auth-session-events';
+import { getCvDocument } from '@/lib/cv-documents-api';
+import { WORKSPACE_ASSET_HUB_SCOPE } from '@/lib/workspace-assets-constants';
+import {
+  fetchLegacyResumeWorkspaceAssets,
+  isLegacyCvWorkspaceAsset,
+  legacyCvDocumentId,
+} from '@/lib/workspace-assets-legacy-bridge';
 import { WORKSPACE_ASSETS_INVALIDATE_EVENT } from '@/lib/workspace-assets-invalidate';
 import type {
   FetchWorkspaceAssetsParams,
   WorkspaceAsset,
+  WorkspaceAssetCategory,
   WorkspaceAssetCategoryCounts,
   WorkspaceAssetsResponse,
 } from '@/types/workspace-asset';
@@ -146,10 +154,12 @@ function useWorkspaceAssetsQueryLifecycle(enabled: boolean) {
     if (!enabled) return;
     const onInvalidate = () => {
       void queryClient.invalidateQueries({ queryKey: ['workspace-assets'] });
+      void queryClient.invalidateQueries({ queryKey: ['workspace-assets-legacy'] });
       void queryClient.invalidateQueries({ queryKey: ['workspace-asset-preview'] });
     };
     const onSessionCleared = () => {
       queryClient.removeQueries({ queryKey: ['workspace-assets'] });
+      queryClient.removeQueries({ queryKey: ['workspace-assets-legacy'] });
       queryClient.removeQueries({ queryKey: ['workspace-asset-preview'] });
     };
 
@@ -209,6 +219,67 @@ export function useWorkspaceAssets(
   };
 }
 
+/** Hub category list with legacy cv_documents bridge when workspace-assets is empty. */
+export function useWorkspaceHubCategoryAssets(category: WorkspaceAssetCategory) {
+  const primary = useWorkspaceAssets(
+    { scope: WORKSPACE_ASSET_HUB_SCOPE, category, includeHistory: false },
+    true
+  );
+
+  const legacyEnabled =
+    category === 'resume' &&
+    primary.authenticated &&
+    !primary.isLoading &&
+    !primary.error &&
+    primary.items.length === 0;
+
+  const legacyQuery = useQuery({
+    queryKey: ['workspace-assets-legacy', category] as const,
+    queryFn: fetchLegacyResumeWorkspaceAssets,
+    enabled: legacyEnabled,
+    staleTime: 30_000,
+  });
+
+  const usingLegacy =
+    category === 'resume' &&
+    primary.items.length === 0 &&
+    (legacyQuery.data?.items.length ?? 0) > 0;
+
+  const source: WorkspaceAssetsResponse = usingLegacy
+    ? legacyQuery.data!
+    : {
+        items: primary.items,
+        categories: primary.categories,
+        history_counts: primary.historyCounts,
+      };
+
+  const currentItems = source.items.filter((item) => item.is_current);
+  const historyItems = source.items.filter(
+    (item) => !item.is_current && item.indexing_status === 'ready'
+  );
+
+  const refresh = useCallback(() => {
+    void primary.refresh();
+    if (category === 'resume') {
+      void legacyQuery.refetch();
+    }
+  }, [category, legacyQuery, primary]);
+
+  return {
+    currentItems,
+    historyItems,
+    categories: source.categories,
+    historyCounts: source.history_counts,
+    isLoading:
+      primary.isLoading || (legacyEnabled && (legacyQuery.isLoading || legacyQuery.isFetching)),
+    error: primary.error ?? (legacyQuery.error instanceof Error ? legacyQuery.error.message : null),
+    refresh,
+    authReady: primary.authReady,
+    authenticated: primary.authenticated,
+    useStaticHistory: usingLegacy,
+  };
+}
+
 /** Per-category history fold — fetches only when expanded (P2-2). */
 export function useWorkspaceAssetCategoryHistory(
   params: FetchWorkspaceAssetsParams & { category: WorkspaceAsset['category'] },
@@ -236,6 +307,15 @@ export function useWorkspaceAssetPreview(
       if (!asset) throw new Error('Missing asset');
       if (asset.mime_type !== 'text/markdown') {
         return null;
+      }
+      if (isLegacyCvWorkspaceAsset(asset)) {
+        const docId = legacyCvDocumentId(asset);
+        if (!docId) throw new Error('Invalid legacy CV asset');
+        const res = await getCvDocument(docId);
+        if (!res.success || !res.data?.content_markdown) {
+          throw new Error(res.error ?? 'Failed to load CV document');
+        }
+        return res.data.content_markdown;
       }
       return fetchWorkspaceAssetMarkdownContent(asset);
     },

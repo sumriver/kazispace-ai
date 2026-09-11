@@ -18,7 +18,7 @@ import { useAuthReady } from '@/hooks/use-auth-ready';
 import {
   retryWorkspaceAssetIndexing,
   useWorkspaceAssetCategoryHistory,
-  useWorkspaceAssets,
+  useWorkspaceHubCategoryAssets,
 } from '@/hooks/use-workspace-assets';
 import {
   isWorkspaceAssetReindexEnabled,
@@ -65,14 +65,8 @@ export function WorkspaceAssetRailHub({
   const tV2 = useTranslations('cv.railHub.assetV2');
   const tCv = useTranslations('cv');
 
-  const resumeQuery = useWorkspaceAssets(
-    { scope: WORKSPACE_ASSET_HUB_SCOPE, category: 'resume', includeHistory: false },
-    true
-  );
-  const interviewQuery = useWorkspaceAssets(
-    { scope: WORKSPACE_ASSET_HUB_SCOPE, category: 'interview', includeHistory: false },
-    true
-  );
+  const resumeQuery = useWorkspaceHubCategoryAssets('resume');
+  const interviewQuery = useWorkspaceHubCategoryAssets('interview');
 
   // Auth gate is independent of asset queries (PR #183 review P1).
   const { ready: authReady, authenticated } = useAuthReady();
@@ -103,13 +97,14 @@ export function WorkspaceAssetRailHub({
           label={tV2('categoryResume')}
           count={resumeQuery.categories.resume}
           historyCount={resumeQuery.historyCounts.resume}
-          items={resumeQuery.items.filter((item) => item.is_current)}
+          items={resumeQuery.currentItems}
           authReady={authReady}
           authenticated={authenticated}
           isLoading={resumeQuery.isLoading}
           error={resumeQuery.error}
           loginRequiredLabel={tV2('loginRequired')}
           olderAssetsLabel={tV2('olderAssets', { count: resumeQuery.historyCounts.resume })}
+          staticHistoryItems={resumeQuery.useStaticHistory ? resumeQuery.historyItems : undefined}
           onOpenAsset={onOpenAsset}
           onRetry={resumeQuery.refresh}
           t={tV2}
@@ -119,7 +114,7 @@ export function WorkspaceAssetRailHub({
           label={tV2('categoryInterview')}
           count={interviewQuery.categories.interview}
           historyCount={interviewQuery.historyCounts.interview}
-          items={interviewQuery.items.filter((item) => item.is_current)}
+          items={interviewQuery.currentItems}
           authReady={authReady}
           authenticated={authenticated}
           isLoading={interviewQuery.isLoading}
@@ -128,6 +123,9 @@ export function WorkspaceAssetRailHub({
           olderAssetsLabel={tV2('olderAssets', {
             count: interviewQuery.historyCounts.interview,
           })}
+          staticHistoryItems={
+            interviewQuery.useStaticHistory ? interviewQuery.historyItems : undefined
+          }
           onOpenAsset={onOpenAsset}
           onRetry={interviewQuery.refresh}
           t={tV2}
@@ -211,6 +209,7 @@ function CareerAssetSubcategory({
   error,
   loginRequiredLabel,
   olderAssetsLabel,
+  staticHistoryItems,
   onOpenAsset,
   onRetry,
   t,
@@ -226,6 +225,7 @@ function CareerAssetSubcategory({
   error: string | null;
   loginRequiredLabel: string;
   olderAssetsLabel: string;
+  staticHistoryItems?: WorkspaceAsset[];
   onOpenAsset?: (asset: WorkspaceAsset) => void;
   onRetry: () => void;
   t: ReturnType<typeof useTranslations<'cv.railHub.assetV2'>>;
@@ -261,6 +261,7 @@ function CareerAssetSubcategory({
             historyCount={historyCount}
             authenticated={authenticated}
             tone={tone}
+            staticHistoryItems={staticHistoryItems}
             onOpenAsset={onOpenAsset}
             onRetry={onRetry}
             t={t}
@@ -278,6 +279,7 @@ function CategoryHistoryFold({
   historyCount,
   authenticated,
   tone,
+  staticHistoryItems,
   onOpenAsset,
   onRetry,
   t,
@@ -287,6 +289,7 @@ function CategoryHistoryFold({
   historyCount: number;
   authenticated: boolean;
   tone: AssetTone;
+  staticHistoryItems?: WorkspaceAsset[];
   onOpenAsset?: (asset: WorkspaceAsset) => void;
   onRetry: () => void;
   t: ReturnType<typeof useTranslations<'cv.railHub.assetV2'>>;
@@ -295,16 +298,18 @@ function CategoryHistoryFold({
 
   const { items, isLoading } = useWorkspaceAssetCategoryHistory(
     { scope: WORKSPACE_ASSET_HUB_SCOPE, category },
-    open,
+    open && staticHistoryItems == null,
     authenticated
   );
 
-  const historyItems = items.filter(
-    (item) =>
-      item.category === category &&
-      !item.is_current &&
-      item.indexing_status === 'ready'
-  );
+  const historyItems =
+    staticHistoryItems ??
+    items.filter(
+      (item) =>
+        item.category === category &&
+        !item.is_current &&
+        item.indexing_status === 'ready'
+    );
 
   if (historyCount <= 0) return null;
 
@@ -326,7 +331,7 @@ function CategoryHistoryFold({
       </button>
       {open ? (
         <div className={cn('mt-1', HUB_ASSET_GRID_CLASS)}>
-          {isLoading ? (
+          {staticHistoryItems == null && isLoading ? (
             <AssetSkeletonRow />
           ) : (
             historyItems.map((asset) => (
