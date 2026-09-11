@@ -167,12 +167,20 @@ export async function switchCvDocumentTemplate(
   docId: number,
   locale?: string
 ): Promise<ApiResponse<{ templateBucket: string; templateId: string }>> {
+  // Review on kazispace-ai#222: unlike exportCvDocument (a real render, up
+  // to 60s), this is a zero-LLM, purely local DB cycle -- but it still hits
+  // the network, so it needs the same abort-on-timeout guard as every other
+  // call in this file rather than hanging indefinitely on a stalled request.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+
   try {
     const response = await regionAwareApiClient.fetch(
       `/api/v1/cv/documents/${docId}/template/next`,
       {
         method: 'POST',
         headers: buildExportHeaders(locale),
+        signal: controller.signal,
         requireSession: Boolean(getAuthToken()),
       }
     );
@@ -189,10 +197,17 @@ export async function switchCvDocumentTemplate(
       data: { templateBucket: data.template_bucket, templateId: data.template_id },
     };
   } catch (err) {
+    const aborted = err instanceof Error && err.name === 'AbortError';
     return {
       success: false,
-      error: err instanceof Error ? err.message : 'Network error',
-      errorCode: 'NETWORK_ERROR',
+      error: aborted
+        ? 'Switch template timed out'
+        : err instanceof Error
+          ? err.message
+          : 'Network error',
+      errorCode: aborted ? 'TIMEOUT' : 'NETWORK_ERROR',
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }

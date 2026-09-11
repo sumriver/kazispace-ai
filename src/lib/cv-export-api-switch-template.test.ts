@@ -27,7 +27,7 @@ describe('KAZI-848 switchCvDocumentTemplate', () => {
     fetchMock.mockReset();
   });
 
-  it('POSTs to the template/next endpoint', async () => {
+  it('POSTs to the template/next endpoint with an abort signal wired up', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
       headers: jsonHeaders(),
@@ -40,6 +40,34 @@ describe('KAZI-848 switchCvDocumentTemplate', () => {
     const [path, init] = fetchMock.mock.calls[0];
     expect(path).toBe('/api/v1/cv/documents/42/template/next');
     expect(init).toMatchObject({ method: 'POST' });
+    // review on #222: a stalled request must not hang forever -- pins that
+    // this call wires up the same abort-on-timeout guard as exportCvDocument.
+    expect((init as { signal?: AbortSignal }).signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('maps a timed-out request to a TIMEOUT error result, not a thrown AbortError', async () => {
+    fetchMock.mockImplementation((_path: string, init: { signal?: AbortSignal }) => {
+      return new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => {
+          // Same shape the real fetch()/AbortController rejection carries
+          // (name: 'AbortError') -- built as a plain Error rather than
+          // `new DOMException(...)` so the `instanceof Error` check the
+          // production code shares with exportCvDocument doesn't depend on
+          // jsdom's DOMException happening to share a realm with Error here.
+          const err = new Error('The operation was aborted.');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      });
+    });
+
+    const promise = switchCvDocumentTemplate(42, 'en');
+    const [, init] = fetchMock.mock.calls[0];
+    (init as { signal: AbortSignal }).signal.dispatchEvent(new Event('abort'));
+    const res = await promise;
+
+    expect(res.success).toBe(false);
+    expect(res.errorCode).toBe('TIMEOUT');
   });
 
   it('maps the snake_case response to templateBucket/templateId', async () => {
