@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { MarkdownContent } from '@/components/clinic/markdown-content';
@@ -20,6 +20,9 @@ interface CvPreviewPaneProps {
   canDownloadDocx?: boolean;
   isExportingDocx?: boolean;
   onDownloadDocx?: () => void;
+  /** KAZI-848 "换一个" — lightweight override of the auto-selected template; only shown once a CV exists. */
+  isSwitchingTemplate?: boolean;
+  onSwitchTemplate?: () => void;
   jobSubtitle?: string;
   panelId?: string;
   className?: string;
@@ -35,6 +38,8 @@ export function CvPreviewPane({
   canDownloadDocx,
   isExportingDocx,
   onDownloadDocx,
+  isSwitchingTemplate,
+  onSwitchTemplate,
   jobSubtitle,
   panelId,
   className,
@@ -42,10 +47,13 @@ export function CvPreviewPane({
   const t = useTranslations('cv');
   const showPdfButton = canDownload && onDownload;
   const showDocxButton = canDownloadDocx && onDownloadDocx;
+  const showSwitchTemplate = canDownload && onSwitchTemplate;
+  const switchTemplateLabel = isSwitchingTemplate ? t('switchingTemplate') : t('switchTemplate');
   // KAZI-845 review: the hook already blocks a concurrent PDF+DOCX export
   // (silent no-op, no toast) -- mirror that in the UI so neither button
   // stays clickable while the *other* format is in flight.
-  const isExportingAny = Boolean(isExporting) || Boolean(isExportingDocx);
+  const isExportingAny =
+    Boolean(isExporting) || Boolean(isExportingDocx) || Boolean(isSwitchingTemplate);
 
   return (
     <aside
@@ -70,6 +78,20 @@ export function CvPreviewPane({
         </div>
         {showPdfButton || showDocxButton ? (
           <div className="hidden lg:flex items-center gap-1.5">
+            {showSwitchTemplate ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isExportingAny}
+                onClick={onSwitchTemplate}
+                title={switchTemplateLabel}
+                aria-label={switchTemplateLabel}
+                data-testid="cv-switch-template-button"
+                className="h-8 w-8 text-gray-500 hover:text-kazi-navy"
+              >
+                <RefreshCw className={cn('h-3.5 w-3.5', isSwitchingTemplate && 'animate-spin')} />
+              </Button>
+            ) : null}
             {showPdfButton ? (
               <ExportButton
                 isExporting={isExporting}
@@ -156,6 +178,20 @@ export function CvPreviewPane({
 
       {showPdfButton || showDocxButton ? (
         <div className="lg:hidden shrink-0 flex gap-2 p-4 bg-white border-t border-gray-200/80 safe-area-pb">
+          {showSwitchTemplate ? (
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={isExportingAny}
+              onClick={onSwitchTemplate}
+              title={switchTemplateLabel}
+              aria-label={switchTemplateLabel}
+              data-testid="cv-switch-template-button"
+              className="h-11 w-11 shrink-0"
+            >
+              <RefreshCw className={cn('h-4 w-4', isSwitchingTemplate && 'animate-spin')} />
+            </Button>
+          ) : null}
           {showPdfButton ? (
             <ExportButton
               isExporting={isExporting}

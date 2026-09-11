@@ -569,6 +569,9 @@
 		"exportErrorGenericDocx": "Не удалось скачать DOCX.",
 		"exportErrorUnavailableDocx": "Экспорт DOCX на сервере пока недоступен.",
 		"exportErrorTimeoutDocx": "Превышено время ожидания экспорта DOCX — повторите попытку.",
+		"switchTemplate": "Другой шаблон",
+		"switchingTemplate": "Смена шаблона…",
+		"switchTemplateError": "Не удалось сменить шаблон. Попробуйте ещё раз.",
 		"parsedSectionKeys": {
 			"target_role": "Целевая роль",
 			"skills": "Навыки",

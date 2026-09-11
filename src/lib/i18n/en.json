@@ -855,6 +855,9 @@
 		"exportErrorGenericDocx": "Failed to download DOCX.",
 		"exportErrorUnavailableDocx": "DOCX export is not available on the server yet.",
 		"exportErrorTimeoutDocx": "DOCX export timed out — please try again.",
+		"switchTemplate": "Try another template",
+		"switchingTemplate": "Switching…",
+		"switchTemplateError": "Could not switch templates. Please try again.",
 		"parsedSectionKeys": {
 			"target_role": "Target role",
 			"skills": "Skills",

@@ -520,6 +520,9 @@
 		"exportErrorGenericDocx": "DOCX yuklab olinmadi.",
 		"exportErrorUnavailableDocx": "Serverda DOCX eksporti hali mavjud emas.",
 		"exportErrorTimeoutDocx": "DOCX eksport vaqti tugadi — qayta urinib ko'ring.",
+		"switchTemplate": "Boshqa shablonni sinab koʻring",
+		"switchingTemplate": "Almashtirilmoqda…",
+		"switchTemplateError": "Shablonni almashtirib boʻlmadi. Qaytadan urinib koʻring.",
 		"parsedSectionKeys": {
 			"target_role": "Maqsadli lavozim",
 			"skills": "Ko'nikmalar",
